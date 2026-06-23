@@ -11,7 +11,7 @@ return [
      |
      */
     'app_id' => env('CASHFREE_APP_ID'),
-    
+
     'secret_key' => env('CASHFREE_SECRET_KEY'),
 
     /*
@@ -44,5 +44,18 @@ return [
      | Specify a log_channel if you want to route Cashfree logs to a separate channel.
      |
      */
+    'logging_enabled' => env('CASHFREE_LOGGING_ENABLED', true),
 
+    'log_channel' => env('CASHFREE_LOG_CHANNEL'),
+
+    /*
+     |--------------------------------------------------------------------------
+     | Retry Settings
+     |--------------------------------------------------------------------------
+     |
+     | Number of retry attempts for transient network errors and backoff in milliseconds.
+     |
+     */
+    'retry_attempts' => env('CASHFREE_RETRY_ATTEMPTS', 3),
+    'retry_backoff_ms' => env('CASHFREE_RETRY_BACKOFF_MS', 500),
 ];

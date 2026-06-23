@@ -4,6 +4,7 @@ namespace CashfreePayment\Tests;
 
 use PHPUnit\Framework\TestCase;
 use CashfreePayment\CashfreeClient;
+use CashfreePayment\Exceptions\CashfreeException;
 use Psr\Log\LoggerInterface;
 
 class CashfreeClientTest extends TestCase
@@ -61,5 +62,43 @@ class CashfreeClientTest extends TestCase
 
         $result = $client->verifyWebhook('', '{}', '');
         $this->assertFalse($result);
+    }
+
+    public function test_webhook_verification_fails_when_secret_key_missing()
+    {
+        $logger = $this->createMock(LoggerInterface::class);
+        $client = new CashfreeClient($this->appId, '', 'sandbox', '2023-08-01', $logger);
+
+        $logger->expects($this->once())
+            ->method('log')
+            ->with('error', $this->stringContains('Secret key is not configured'));
+
+        $result = $client->verifyWebhook('1692789123', '{}', 'signature');
+        $this->assertFalse($result);
+    }
+
+    public function test_create_order_throws_when_credentials_missing()
+    {
+        $client = new CashfreeClient('', '', 'sandbox', '2023-08-01', null, false);
+
+        $this->expectException(CashfreeException::class);
+        $this->expectExceptionMessage('Cashfree credentials are not configured');
+
+        $client->createOrder([
+            'order_id' => 'order_123',
+            'order_amount' => 100,
+            'order_currency' => 'INR',
+        ]);
+    }
+
+    public function test_production_environment_uses_live_api_base_uri()
+    {
+        $client = new CashfreeClient($this->appId, $this->secretKey, 'production', '2023-08-01', null, false);
+
+        $reflection = new \ReflectionClass($client);
+        $property = $reflection->getProperty('baseUri');
+        $property->setAccessible(true);
+
+        $this->assertSame('https://api.cashfree.com/pg', $property->getValue($client));
     }
 }

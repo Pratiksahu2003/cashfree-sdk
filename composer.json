@@ -1,6 +1,6 @@
 {
     "name": "pratiksahu1535/cashfree-payment",
-    "description": "A lightweight PHP SDK for the Cashfree Payment Gateway (PG v3 API).",
+    "description": "A lightweight PHP SDK and Laravel package for the Cashfree Payment Gateway (PG v3 API).",
     "type": "library",
     "license": "MIT",
     "keywords": [
@@ -9,7 +9,10 @@
         "gateway",
         "sdk",
         "php",
-        "composer"
+        "laravel",
+        "composer",
+        "webhook",
+        "refund"
     ],
     "authors": [
         {
@@ -18,9 +21,11 @@
         }
     ],
     "require": {
-        "php": ">=8.0",
+        "php": "^8.0",
         "guzzlehttp/guzzle": "^7.5",
-        "psr/log": "^1.0 || ^2.0 || ^3.0"
+        "psr/log": "^1.0 || ^2.0 || ^3.0",
+        "illuminate/support": "^10.0|^11.0|^12.0",
+        "illuminate/database": "^10.0|^11.0|^12.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^10.5"
@@ -34,6 +39,20 @@
         "psr-4": {
             "CashfreePayment\\Tests\\": "tests/"
         }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "CashfreePayment\\CashfreePaymentServiceProvider"
+            ],
+            "aliases": {
+                "Cashfree": "CashfreePayment\\Facades\\Cashfree"
+            }
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test:coverage": "phpunit --coverage-text"
     },
     "minimum-stability": "stable",
     "prefer-stable": true

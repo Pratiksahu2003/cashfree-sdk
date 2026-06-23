@@ -1,79 +1,154 @@
-# Cashfree Payment Gateway Laravel SDK
+# Cashfree Payment Gateway — PHP & Laravel SDK
 
-A lightweight PHP SDK and Laravel integration wrapper for the **Cashfree Payment Gateway (PG v3 API)**. It supports creating orders, checking order statuses, processing refunds, securely verifying webhooks using SHA256 signatures, and writing detailed, redacted transaction logs.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![PHP Version](https://img.shields.io/badge/php-%5E8.0-777BB4.svg)](https://php.net)
+
+A production-ready PHP SDK and Laravel package for the **Cashfree Payment Gateway (PG v3 API)**.
+
+Create orders, fetch payment status, process refunds, verify webhooks with HMAC-SHA256 signatures, and optionally persist transactions in Laravel using the included Eloquent model and migration.
+
+---
+
+## Table of Contents
+
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Usage](#usage)
+  - [Laravel (Facade)](#laravel-facade)
+  - [Plain PHP (No Framework)](#plain-php-no-framework)
+  - [Webhook Verification](#webhook-verification)
+  - [Database Model (Laravel)](#database-model-laravel)
+- [Complete Laravel Example](#complete-laravel-example)
+- [Error Handling](#error-handling)
+- [Logging](#logging)
+- [API Reference](#api-reference)
+- [Testing](#testing)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
 
 ---
 
 ## Features
 
-- **API v3 PG Engine**: Ready for `/orders` and `/refunds` endpoints.
-- **Webhook signature validation**: Simple validation against signature spoofing.
-- **Environment config**: Fully configurable using your Laravel `.env` file.
-- **Log management**: Formatted logs that automatically redact your `x-client-secret` key for data safety.
-- **Service Provider & Facade**: Native Laravel integration.
+| Feature | Description |
+|---------|-------------|
+| **PG v3 API** | Orders, order status, refunds |
+| **Webhook security** | HMAC-SHA256 signature verification |
+| **Laravel integration** | Auto-discovered service provider, facade, config, migrations |
+| **Plain PHP support** | Use `CashfreeClient` directly without Laravel |
+| **Safe logging** | Request/response logging with secret key redaction |
+| **Automatic retries** | Configurable retries for network and transient API errors |
+| **Eloquent model** | Optional `cashfree_payments` table for transaction records |
+
+---
+
+## Requirements
+
+- PHP **8.0+**
+- [Composer](https://getcomposer.org/)
+- Cashfree merchant account ([Sign up](https://www.cashfree.com/))
+- **Laravel 10, 11, or 12** (only if using the Laravel integration)
 
 ---
 
 ## Installation
 
-### 1. Locally (Path Repository)
-Since the package is local, register it in your Laravel project's `composer.json` using a path repository:
+### Option 1: Install via Composer (Recommended)
+
+Once published to Packagist, install with:
+
+```bash
+composer require pratiksahu1535/cashfree-payment
+```
+
+### Option 2: Local Path Repository
+
+For local development, add a path repository to your Laravel project's `composer.json`:
 
 ```json
-"repositories": [
-    {
-        "type": "path",
-        "url": "../path-to-this-package-folder"
+{
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../path-to-this-package-folder"
+        }
+    ],
+    "require": {
+        "pratiksahu1535/cashfree-payment": "@dev"
     }
-],
-"require": {
-    "pratiksahu1535/cashfree-payment": "@dev"
 }
 ```
 
 Then run:
+
 ```bash
 composer update pratiksahu1535/cashfree-payment
 ```
 
-### 2. Auto-Discovery
-The package is designed with auto-discovery enabled. Once installed, Laravel will register `CashfreePaymentServiceProvider` and the `Cashfree` facade automatically.
+### Laravel Auto-Discovery
+
+No manual registration is required. Laravel automatically loads:
+
+- `CashfreePayment\CashfreePaymentServiceProvider`
+- `Cashfree` facade alias
+
+After installation, clear config cache if you use it:
+
+```bash
+php artisan config:clear
+```
 
 ---
 
 ## Configuration
 
-### 1. Publish Configuration File
-Publish the configuration to your Laravel project config folder:
+### 1. Publish Config (Laravel)
 
 ```bash
 php artisan vendor:publish --tag=cashfree-config
 ```
 
-This creates `config/cashfree.php`.
+This creates `config/cashfree.php` in your Laravel project.
 
-### 2. Configure Environment Variables (`.env`)
-Add the following keys to your project's `.env` file:
+### 2. Environment Variables
+
+Add these to your `.env` file:
 
 ```env
-# Cashfree Credentials
-CASHFREE_APP_ID="your_cashfree_app_id"
-CASHFREE_SECRET_KEY="your_cashfree_secret_key"
-CASHFREE_ENV="sandbox" # Use "production" for live payments
+# Required — get from Cashfree Merchant Dashboard
+CASHFREE_APP_ID=your_app_id
+CASHFREE_SECRET_KEY=your_secret_key
 
-# Optional Configuration
-CASHFREE_API_VERSION="2023-08-01"
+# sandbox (testing) or production (live payments)
+CASHFREE_ENV=sandbox
+
+# Optional
+CASHFREE_API_VERSION=2023-08-01
 CASHFREE_LOGGING_ENABLED=true
-CASHFREE_LOG_CHANNEL="cashfree"
+CASHFREE_LOG_CHANNEL=cashfree
+CASHFREE_RETRY_ATTEMPTS=3
+CASHFREE_RETRY_BACKOFF_MS=500
 ```
 
-### 3. Setup Custom Logging Channel (Optional)
-To send all Cashfree operations and webhook events to a dedicated log file (`storage/logs/cashfree.log`) instead of `laravel.log`, add the channel inside `config/logging.php`:
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `CASHFREE_APP_ID` | Yes | — | Cashfree Client ID |
+| `CASHFREE_SECRET_KEY` | Yes | — | Cashfree Client Secret |
+| `CASHFREE_ENV` | No | `sandbox` | `sandbox` or `production` |
+| `CASHFREE_API_VERSION` | No | `2023-08-01` | Cashfree API version header |
+| `CASHFREE_LOGGING_ENABLED` | No | `true` | Enable API and webhook logs |
+| `CASHFREE_LOG_CHANNEL` | No | Laravel default | Dedicated log channel name |
+| `CASHFREE_RETRY_ATTEMPTS` | No | `3` | Retry count for transient failures |
+| `CASHFREE_RETRY_BACKOFF_MS` | No | `500` | Backoff delay in milliseconds |
+
+### 3. Custom Log Channel (Optional)
+
+Add to `config/logging.php`:
 
 ```php
 'channels' => [
-    // ... other channels ...
-
     'cashfree' => [
         'driver' => 'single',
         'path' => storage_path('logs/cashfree.log'),
@@ -82,37 +157,34 @@ To send all Cashfree operations and webhook events to a dedicated log file (`sto
 ],
 ```
 
-### 4. Database Migrations & Recording
-The package includes a database migration to create the `cashfree_payments` table for recording and logging transaction statuses.
+### 4. Database Migration (Optional)
 
-#### Running Migrations
-Migrations are automatically loaded by the service provider. Run them inside your Laravel project using:
+Run the included migration to create the `cashfree_payments` table:
+
 ```bash
 php artisan migrate
 ```
 
-#### Publishing Migrations (Optional)
-If you wish to modify or customize the migration schema, you can publish it:
+To customize the schema, publish migrations first:
+
 ```bash
 php artisan vendor:publish --tag=cashfree-migrations
+php artisan migrate
 ```
 
 ---
 
 ## Usage
 
-Check the `examples/` directory in the package for complete code implementations of:
-- **`PaymentController.php`**: Full controller handling payment creation, webhook validation, and refunds.
-- **`routes.php`**: Route definitions and instructions to exclude the webhook route from CSRF protection.
+### Laravel (Facade)
 
-### Quick Syntax Examples
+#### Create an Order
 
-#### Create an Order Session
 ```php
 use CashfreePayment\Facades\Cashfree;
 
 $response = Cashfree::createOrder([
-    'order_id' => 'my_order_id_101',
+    'order_id' => 'order_' . uniqid(),
     'order_amount' => 150.00,
     'order_currency' => 'INR',
     'customer_details' => [
@@ -121,84 +193,332 @@ $response = Cashfree::createOrder([
         'customer_email' => 'customer@example.com',
     ],
     'order_meta' => [
-        'return_url' => 'https://example.com/payment/callback?order_id={order_id}',
-    ]
+        'return_url' => 'https://yoursite.com/payment/callback?order_id={order_id}',
+        'notify_url' => 'https://yoursite.com/payment/webhook',
+    ],
 ]);
 
 $paymentSessionId = $response['payment_session_id'];
 $paymentLink = $response['payment_link'];
 ```
 
-#### Fetch Order Details
+#### Get Order Status
+
 ```php
-$order = Cashfree::getOrder('my_order_id_101');
+$order = Cashfree::getOrder('order_abc123');
 $status = $order['order_status']; // PAID, ACTIVE, EXPIRED, etc.
 ```
 
-#### Refund an Order
+#### Create a Refund
+
 ```php
-$refund = Cashfree::createRefund('my_order_id_101', [
+$refund = Cashfree::createRefund('order_abc123', [
     'refund_amount' => 150.00,
-    'refund_id' => 'ref_101_unique',
-    'refund_note' => 'Item out of stock',
+    'refund_id' => 'refund_' . uniqid(),
+    'refund_note' => 'Customer requested refund',
 ]);
 ```
 
-#### Webhook Validation
-Validate that incoming webhook notifications are authentic:
+#### List Refunds for an Order
 
 ```php
-use CashfreePayment\Facades\Cashfree;
+$refunds = Cashfree::getRefunds('order_abc123');
+```
 
-$signature = $request->header('x-webhook-signature');
-$timestamp = $request->header('x-webhook-timestamp');
-$rawPayload = $request->getContent(); // Raw request body
+#### Dependency Injection
 
-$isValid = Cashfree::verifyWebhook($timestamp, $rawPayload, $signature);
+You can also inject the client directly:
 
-if ($isValid) {
-    // Process payment event safely...
+```php
+use CashfreePayment\CashfreeClient;
+
+public function __construct(protected CashfreeClient $cashfree) {}
+
+public function pay()
+{
+    return $this->cashfree->createOrder([/* ... */]);
 }
 ```
 
-#### Database Model
-You can import the `CashfreePayment` Eloquent model to query or update records in the `cashfree_payments` table:
+Register the binding in a service provider if needed:
+
+```php
+$this->app->alias('cashfree', CashfreeClient::class);
+```
+
+---
+
+### Plain PHP (No Framework)
+
+Use `CashfreeClient` directly in any PHP project:
+
+```php
+<?php
+
+require __DIR__ . '/vendor/autoload.php';
+
+use CashfreePayment\CashfreeClient;
+use CashfreePayment\Exceptions\CashfreeException;
+
+$client = new CashfreeClient(
+    appId: getenv('CASHFREE_APP_ID'),
+    secretKey: getenv('CASHFREE_SECRET_KEY'),
+    environment: 'sandbox',
+    apiVersion: '2023-08-01',
+    logger: null,
+    loggingEnabled: false
+);
+
+try {
+    $order = $client->createOrder([
+        'order_id' => 'order_' . uniqid(),
+        'order_amount' => 99.00,
+        'order_currency' => 'INR',
+        'customer_details' => [
+            'customer_id' => 'cust_1',
+            'customer_phone' => '9999999999',
+            'customer_email' => 'user@example.com',
+        ],
+    ]);
+
+    echo $order['payment_link'];
+} catch (CashfreeException $e) {
+    echo 'Payment error: ' . $e->getMessage();
+}
+```
+
+---
+
+### Webhook Verification
+
+Cashfree sends webhooks with `x-webhook-signature` and `x-webhook-timestamp` headers. Always verify before processing.
+
+#### Laravel Controller
+
+```php
+use CashfreePayment\Facades\Cashfree;
+use Illuminate\Http\Request;
+
+public function webhook(Request $request)
+{
+    $signature = $request->header('x-webhook-signature');
+    $timestamp = $request->header('x-webhook-timestamp');
+    $rawPayload = $request->getContent();
+
+    if (!Cashfree::verifyWebhook($timestamp, $rawPayload, $signature)) {
+        return response()->json(['message' => 'Invalid signature'], 400);
+    }
+
+    $payload = json_decode($rawPayload, true);
+    // Process payment event safely...
+
+    return response()->json(['status' => 'OK']);
+}
+```
+
+#### Exclude Webhook from CSRF (Laravel)
+
+**Laravel 11+** — in `bootstrap/app.php`:
+
+```php
+->withMiddleware(function (Middleware $middleware) {
+    $middleware->validateCsrfTokens(except: [
+        'payment/webhook',
+    ]);
+})
+```
+
+**Laravel 10 and below** — in `app/Http/Middleware/VerifyCsrfToken.php`:
+
+```php
+protected $except = [
+    'payment/webhook',
+];
+```
+
+Configure the webhook URL in your [Cashfree Dashboard](https://merchant.cashfree.com/) to match your route (e.g. `https://yoursite.com/payment/webhook`).
+
+---
+
+### Database Model (Laravel)
 
 ```php
 use CashfreePayment\Models\CashfreePayment;
 
-// Fetch payment by order ID
-$payment = CashfreePayment::where('order_id', 'order_123456')->first();
+$payment = CashfreePayment::where('order_id', 'order_abc123')->first();
 
 if ($payment) {
-    $status = $payment->status; // PAID, ACTIVE, FAILED, etc.
-    $transactionId = $payment->transaction_id;
-    $amount = $payment->amount;
-    
-    // The raw API response arrays are cast automatically:
-    $rawResponseData = $payment->raw_response; 
+    echo $payment->status;           // PAID, ACTIVE, FAILED, etc.
+    echo $payment->transaction_id;
+    echo $payment->amount;
+    $rawData = $payment->raw_response; // auto-cast to array
 }
 ```
 
+Save a record after creating an order:
+
+```php
+CashfreePayment::create([
+    'order_id' => $orderId,
+    'amount' => 150.00,
+    'currency' => 'INR',
+    'customer_id' => 'user_992',
+    'customer_phone' => '9999999999',
+    'customer_email' => 'customer@example.com',
+    'status' => $response['order_status'] ?? 'ACTIVE',
+    'payment_session_id' => $response['payment_session_id'] ?? null,
+    'raw_response' => $response,
+]);
+```
+
 ---
 
-## Logging Behavior
+## Complete Laravel Example
 
-When `logging_enabled` is set to `true`, the SDK writes log entries for tracking:
-- **API Request**: Records the HTTP method, endpoint URL, JSON payload, and redacted request headers.
-- **API Response**: Records status codes and parsed JSON payloads.
-- **API Errors**: Logs Guzzle client errors, error response structures, and low-level PHP exceptions.
-- **Webhook Verifications**: Logs confirmation of signature verification success, or alerts on mismatches (signature spoofing attempts) containing timestamps and payloads.
+The `examples/` directory contains ready-to-use reference code:
 
-All log entries are fully compatible with any custom logger matching `Psr\Log\LoggerInterface` (defaulting to Laravel's log manager).
+| File | Description |
+|------|-------------|
+| `examples/PaymentController.php` | Full controller: create order, callback, webhook, refund |
+| `examples/routes.php` | Route definitions and CSRF exclusion notes |
+
+Copy these into your Laravel app and adjust route names/URLs as needed.
 
 ---
 
-## Running Package Tests
+## Error Handling
 
-If you wish to run unit tests locally inside the package:
+All API methods throw `CashfreePayment\Exceptions\CashfreeException` on failure.
+
+```php
+use CashfreePayment\Exceptions\CashfreeException;
+
+try {
+    $order = Cashfree::createOrder($params);
+} catch (CashfreeException $e) {
+    $message = $e->getMessage();           // Human-readable error
+    $httpCode = $e->getCode();             // HTTP status code
+    $apiError = $e->getErrorResponse();    // Raw Cashfree error payload (array|null)
+}
+```
+
+Common causes:
+
+| Error | Fix |
+|-------|-----|
+| `Cashfree credentials are not configured` | Set `CASHFREE_APP_ID` and `CASHFREE_SECRET_KEY` in `.env` |
+| `401 Unauthorized` | Wrong App ID or Secret Key |
+| `Signature verification failed` | Wrong secret key or modified webhook body |
+| Connection errors | Check server outbound HTTPS; retries run automatically |
+
+---
+
+## Logging
+
+When `CASHFREE_LOGGING_ENABLED=true`, the SDK logs:
+
+- **API requests** — method, URL, payload, redacted headers
+- **API responses** — status code and JSON body
+- **API errors** — error payloads and system messages
+- **Webhook events** — verification success/failure with payload
+
+The `x-client-secret` header is always logged as `REDACTED`.
+
+---
+
+## API Reference
+
+### `CashfreeClient` / `Cashfree` Facade
+
+| Method | Description |
+|--------|-------------|
+| `createOrder(array $params): array` | Create a new payment order |
+| `getOrder(string $orderId): array` | Fetch order details |
+| `createRefund(string $orderId, array $params): array` | Initiate a refund |
+| `getRefunds(string $orderId): array` | List refunds for an order |
+| `verifyWebhook(string $timestamp, string $rawBody, string $signature): bool` | Validate webhook signature |
+
+### Order Payload (Minimum)
+
+```php
+[
+    'order_id' => 'unique_order_id',      // Required — your reference
+    'order_amount' => 100.00,             // Required
+    'order_currency' => 'INR',            // Required
+    'customer_details' => [              // Required
+        'customer_id' => 'cust_1',
+        'customer_phone' => '9999999999',
+        'customer_email' => 'user@example.com',
+    ],
+    'order_meta' => [                    // Recommended
+        'return_url' => 'https://yoursite.com/callback?order_id={order_id}',
+        'notify_url' => 'https://yoursite.com/webhook',
+    ],
+]
+```
+
+Refer to the [Cashfree PG API documentation](https://www.cashfree.com/docs/api-reference/payments/latest/overview) for full parameter details.
+
+---
+
+## Testing
+
+Run the package test suite:
 
 ```bash
 composer install
+composer test
+```
+
+Or directly:
+
+```bash
 ./vendor/bin/phpunit
 ```
+
+Tests cover webhook verification, credential validation, and environment configuration.
+
+---
+
+## Troubleshooting
+
+### Package not auto-discovered
+
+```bash
+php artisan package:discover
+php artisan config:clear
+```
+
+### Webhook returns 419 (CSRF token mismatch)
+
+Add your webhook route to CSRF exceptions (see [Webhook Verification](#webhook-verification)).
+
+### Webhook signature always fails
+
+- Use `$request->getContent()` for the **raw** body — do not use `$request->all()` or `$request->json()`
+- Ensure `CASHFREE_SECRET_KEY` matches the environment (sandbox vs production)
+- Confirm `x-webhook-timestamp` and `x-webhook-signature` headers are present
+
+### Payments work in sandbox but not production
+
+- Set `CASHFREE_ENV=production`
+- Use production App ID and Secret Key from the Cashfree dashboard
+- Update webhook URL to your live domain
+
+### `Class "CashfreePayment\Facades\Cashfree" not found`
+
+Run `composer dump-autoload` and ensure the package is installed correctly.
+
+---
+
+## License
+
+This project is open-sourced software licensed under the [MIT License](LICENSE).
+
+---
+
+## Support
+
+- **Cashfree Docs:** [https://www.cashfree.com/docs](https://www.cashfree.com/docs)
+- **Issues:** Open a GitHub issue in this repository
+- **Author:** Pratik Sahu — pratiksahu1535@gmail.com

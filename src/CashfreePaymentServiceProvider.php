@@ -35,7 +35,9 @@ class CashfreePaymentServiceProvider extends ServiceProvider
                 environment: $config['environment'] ?? 'sandbox',
                 apiVersion: $config['api_version'] ?? '2023-08-01',
                 logger: $logger,
-                loggingEnabled: (bool) ($config['logging_enabled'] ?? true)
+                loggingEnabled: (bool) ($config['logging_enabled'] ?? true),
+                retryAttempts: (int) ($config['retry_attempts'] ?? 3),
+                retryBackoffMs: (int) ($config['retry_backoff_ms'] ?? 500)
             );
         });
     }
