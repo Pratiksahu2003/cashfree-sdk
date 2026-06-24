@@ -58,72 +58,48 @@ Create orders, fetch payment status, process refunds, verify webhooks with HMAC-
 
 ## Installation
 
-### Option 1: Install via Composer (Recommended)
-
-Install from Packagist:
+Install in your Laravel project with one command:
 
 ```bash
 composer require pratiksahu2003/cashfree-sdk
 ```
 
-Or install directly from GitHub before Packagist indexing:
-
-```bash
-composer require pratiksahu2003/cashfree-sdk:dev-main
-```
-
-### Option 2: Local Path Repository
-
-For local development, add a path repository to your Laravel project's `composer.json`:
+When Composer asks to trust the plugin, choose **yes** (or add this once to your Laravel `composer.json`):
 
 ```json
-{
-    "repositories": [
-        {
-            "type": "path",
-            "url": "../path-to-this-package-folder"
-        }
-    ],
-    "require": {
-        "pratiksahu2003/cashfree-sdk": "@dev"
+"config": {
+    "allow-plugins": {
+        "pratiksahu2003/cashfree-sdk": true
     }
 }
 ```
 
-Then run:
+### What happens automatically
 
-```bash
-composer update pratiksahu2003/cashfree-sdk
-```
+After `composer require`, the package runs setup for you — no manual steps:
 
-### Laravel Auto-Discovery
+| Step | Automatic action |
+|------|------------------|
+| Service provider & facade | Laravel auto-discovery |
+| Config | Published to `config/cashfree.php` |
+| Environment variables | Appended to `.env` and `.env.example` |
+| Migrations | Loaded from the package (run `php artisan migrate` when ready) |
+| Cache | `package:discover` and `config:clear` run for you |
 
-No manual registration is required. Laravel automatically loads:
+You only need to fill in your Cashfree credentials in `.env`:
 
-- `CashfreePayment\CashfreePaymentServiceProvider`
-- `Cashfree` facade alias
-
-After installation, clear config cache if you use it:
-
-```bash
-php artisan config:clear
+```env
+CASHFREE_APP_ID=your_app_id
+CASHFREE_SECRET_KEY=your_secret_key
 ```
 
 ---
 
 ## Configuration
 
-### 1. Publish Config (Laravel)
+Config and `.env` keys are created automatically when you install the package. Customize `config/cashfree.php` if needed.
 
-```bash
-php artisan vendor:publish --tag=cashfree-config
-```
-
-This creates `config/cashfree.php` in your Laravel project.
-
-### 2. Environment Variables
-
-Add these to your `.env` file:
+### Environment Variables
 
 ```env
 # Required — get from Cashfree Merchant Dashboard
@@ -152,7 +128,7 @@ CASHFREE_RETRY_BACKOFF_MS=500
 | `CASHFREE_RETRY_ATTEMPTS` | No | `3` | Retry count for transient failures |
 | `CASHFREE_RETRY_BACKOFF_MS` | No | `500` | Backoff delay in milliseconds |
 
-### 3. Custom Log Channel (Optional)
+### Custom Log Channel (Optional)
 
 Add to `config/logging.php`:
 
@@ -166,7 +142,7 @@ Add to `config/logging.php`:
 ],
 ```
 
-### 4. Database Migration (Optional)
+### Database Migration (Optional)
 
 Run the included migration to create the `cashfree_payments` table:
 
@@ -236,8 +212,6 @@ $refunds = Cashfree::getRefunds('order_abc123');
 
 #### Dependency Injection
 
-You can also inject the client directly:
-
 ```php
 use CashfreePayment\CashfreeClient;
 
@@ -247,12 +221,6 @@ public function pay()
 {
     return $this->cashfree->createOrder([/* ... */]);
 }
-```
-
-Register the binding in a service provider if needed:
-
-```php
-$this->app->alias('cashfree', CashfreeClient::class);
 ```
 
 ---
@@ -523,18 +491,6 @@ Run `composer dump-autoload` and ensure the package is installed correctly.
 ## License
 
 This project is open-sourced software licensed under the [MIT License](LICENSE).
-
----
-
-## Publishing & Releases
-
-This package is published as [`pratiksahu2003/cashfree-sdk`](https://packagist.org/packages/pratiksahu2003/cashfree-sdk) on Packagist.
-
-Release checklist:
-
-1. Update `CHANGELOG.md` for the new version
-2. Tag the release: `git tag v1.0.0 && git push origin v1.0.0`
-3. Packagist auto-updates when connected to this GitHub repository
 
 ---
 

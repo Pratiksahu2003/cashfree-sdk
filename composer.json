@@ -28,12 +28,14 @@
     },
     "require": {
         "php": "^8.0",
+        "composer-plugin-api": "^2.2",
         "guzzlehttp/guzzle": "^7.5",
         "psr/log": "^1.0 || ^2.0 || ^3.0",
         "illuminate/support": "^10.0|^11.0|^12.0",
         "illuminate/database": "^10.0|^11.0|^12.0"
     },
     "require-dev": {
+        "composer/composer": "^2.7",
         "phpunit/phpunit": "^10.5"
     },
     "autoload": {
@@ -47,6 +49,7 @@
         }
     },
     "extra": {
+        "class": "CashfreePayment\\Composer\\InstallPlugin",
         "laravel": {
             "providers": [
                 "CashfreePayment\\CashfreePaymentServiceProvider"
