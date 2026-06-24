@@ -1,7 +1,10 @@
 # Cashfree Payment Gateway — PHP & Laravel SDK
 
+[![Tests](https://github.com/Pratiksahu2003/cashfree-sdk/actions/workflows/tests.yml/badge.svg)](https://github.com/Pratiksahu2003/cashfree-sdk/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![PHP Version](https://img.shields.io/badge/php-%5E8.0-777BB4.svg)](https://php.net)
+
+> **Repository:** [github.com/Pratiksahu2003/cashfree-sdk](https://github.com/Pratiksahu2003/cashfree-sdk)
 
 A production-ready PHP SDK and Laravel package for the **Cashfree Payment Gateway (PG v3 API)**.
 
@@ -57,10 +60,16 @@ Create orders, fetch payment status, process refunds, verify webhooks with HMAC-
 
 ### Option 1: Install via Composer (Recommended)
 
-Once published to Packagist, install with:
+Install from Packagist:
 
 ```bash
-composer require pratiksahu1535/cashfree-payment
+composer require pratiksahu2003/cashfree-sdk
+```
+
+Or install directly from GitHub before Packagist indexing:
+
+```bash
+composer require pratiksahu2003/cashfree-sdk:dev-main
 ```
 
 ### Option 2: Local Path Repository
@@ -76,7 +85,7 @@ For local development, add a path repository to your Laravel project's `composer
         }
     ],
     "require": {
-        "pratiksahu1535/cashfree-payment": "@dev"
+        "pratiksahu2003/cashfree-sdk": "@dev"
     }
 }
 ```
@@ -84,7 +93,7 @@ For local development, add a path repository to your Laravel project's `composer
 Then run:
 
 ```bash
-composer update pratiksahu1535/cashfree-payment
+composer update pratiksahu2003/cashfree-sdk
 ```
 
 ### Laravel Auto-Discovery
@@ -517,8 +526,20 @@ This project is open-sourced software licensed under the [MIT License](LICENSE).
 
 ---
 
+## Publishing & Releases
+
+This package is published as [`pratiksahu2003/cashfree-sdk`](https://packagist.org/packages/pratiksahu2003/cashfree-sdk) on Packagist.
+
+Release checklist:
+
+1. Update `CHANGELOG.md` for the new version
+2. Tag the release: `git tag v1.0.0 && git push origin v1.0.0`
+3. Packagist auto-updates when connected to this GitHub repository
+
+---
+
 ## Support
 
 - **Cashfree Docs:** [https://www.cashfree.com/docs](https://www.cashfree.com/docs)
-- **Issues:** Open a GitHub issue in this repository
-- **Author:** Pratik Sahu — pratiksahu1535@gmail.com
+- **Issues:** [github.com/Pratiksahu2003/cashfree-sdk/issues](https://github.com/Pratiksahu2003/cashfree-sdk/issues)
+- **Author:** [Pratik Sahu](https://github.com/Pratiksahu2003) — pratiksahu1535@gmail.com

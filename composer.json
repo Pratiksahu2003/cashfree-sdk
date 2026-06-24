@@ -1,5 +1,5 @@
 {
-    "name": "pratiksahu1535/cashfree-payment",
+    "name": "pratiksahu2003/cashfree-sdk",
     "description": "A lightweight PHP SDK and Laravel package for the Cashfree Payment Gateway (PG v3 API).",
     "type": "library",
     "license": "MIT",
@@ -17,9 +17,15 @@
     "authors": [
         {
             "name": "Pratik Sahu",
-            "email": "pratiksahu1535@gmail.com"
+            "email": "pratiksahu1535@gmail.com",
+            "homepage": "https://github.com/Pratiksahu2003"
         }
     ],
+    "homepage": "https://github.com/Pratiksahu2003/cashfree-sdk",
+    "support": {
+        "issues": "https://github.com/Pratiksahu2003/cashfree-sdk/issues",
+        "source": "https://github.com/Pratiksahu2003/cashfree-sdk"
+    },
     "require": {
         "php": "^8.0",
         "guzzlehttp/guzzle": "^7.5",
